@@ -1,0 +1,156 @@
+<?php get_header();?>
+
+    <div class="s-container">
+        <div id="primary" class="content-area">
+            <main id="main" class="site-main -hide-title">
+
+				<?php while ( have_posts() ) : the_post(); ?>
+
+					<?php get_template_part( 'template-parts/content', 'page' ); ?>
+
+				<?php endwhile;?>
+
+            </main>
+        </div>
+    </div>
+
+    <div class="sec-property">
+    <div class="s-container">
+
+        <h2 class="s-title">PROPERTIES</h2>
+
+<?php
+global $post, $taxonomy_title, $taxonomy_name;
+
+$custom_property_layout_style = ere_get_option('archive_property_layout_style', 'property-grid');
+
+$custom_property_items_amount = ere_get_option('archive_property_items_amount', '6');
+$custom_property_image_size = ere_get_option( 'archive_property_image_size', '330x180' );
+$custom_property_columns = ere_get_option('archive_property_columns', '3');
+$custom_property_columns_gap = ere_get_option('archive_property_columns_gap', 'col-gap-30');
+$custom_property_items_md = ere_get_option('archive_property_items_md', '3');
+$custom_property_items_sm = ere_get_option('archive_property_items_sm', '2');
+$custom_property_items_xs = ere_get_option('archive_property_items_xs', '1');
+$custom_property_items_mb = ere_get_option('archive_property_items_mb', '1');
+
+$property_item_class = array();
+ERE_Compare::open_session();
+if (isset($_SESSION["property_view_as"]) && !empty($_SESSION["property_view_as"]) && in_array($_SESSION["property_view_as"], array('property-list', 'property-grid'))) {
+    $custom_property_layout_style = $_SESSION["property_view_as"];
+}
+
+$wrapper_classes = array(
+    'ere-property clearfix',
+    $custom_property_layout_style,
+    $custom_property_columns_gap
+);
+
+if ($custom_property_layout_style == 'property-list') {
+    $wrapper_classes[] = 'list-1-column';
+}
+
+if ($custom_property_columns_gap == 'col-gap-30') {
+    $property_item_class[] = 'mg-bottom-30';
+} elseif ($custom_property_columns_gap == 'col-gap-20') {
+    $property_item_class[] = 'mg-bottom-20';
+} elseif ($custom_property_columns_gap == 'col-gap-10') {
+    $property_item_class[] = 'mg-bottom-10';
+}
+
+$wrapper_classes[] = 'columns-' . $custom_property_columns;
+$wrapper_classes[] = 'columns-md-' . $custom_property_items_md;
+$wrapper_classes[] = 'columns-sm-' . $custom_property_items_sm;
+$wrapper_classes[] = 'columns-xs-' . $custom_property_items_xs;
+$wrapper_classes[] = 'columns-mb-' . $custom_property_items_mb;
+$property_item_class[] = 'ere-item-wrap';
+$args = array(
+    'posts_per_page' => $custom_property_items_amount,
+    'post_type' => 'property',
+    'orderby'   => array(
+        'menu_order'=>'ASC',
+        'date' =>'DESC',
+    ),
+    'offset' => (max(1, get_query_var('paged')) - 1) * $custom_property_items_amount,
+    'ignore_sticky_posts' => 1,
+    'post_status' => 'publish'
+);
+
+$property_status=ere_get_property_status_search();
+$property_status_arr = array();
+if ($property_status) {
+    foreach ($property_status as $property_stt) {
+        $property_status_arr[] = $property_stt->slug;
+    }
+}
+
+$data = new WP_Query($args);
+$total_post = $data->found_posts;
+$min_suffix = ere_get_option('enable_min_css', 0) == 1 ? '.min' : '';
+wp_print_styles( ERE_PLUGIN_PREFIX . 'property');
+wp_print_styles( ERE_PLUGIN_PREFIX . 'archive-property');
+
+$min_suffix_js = ere_get_option('enable_min_js', 0) == 1 ? '.min' : '';
+wp_enqueue_script(ERE_PLUGIN_PREFIX . 'archive-property', ERE_PLUGIN_URL . 'public/assets/js/property/ere-archive-property' . $min_suffix_js . '.js', array('jquery'), ERE_PLUGIN_VER, true);
+?>
+
+        <div class="ere-archive-property-wrap ere-property-wrap">
+		    <?php do_action('ere_archive_property_before_main_content'); ?>
+            <div class="ere-archive-property archive-property">
+                <div class="above-archive-property">
+				    <?php //do_action('ere_archive_property_heading', $total_post, $taxonomy_title, $agent_id, $author_id); ?>
+				    <?php //do_action('ere_archive_property_action', $taxonomy_name); ?>
+                </div>
+                <div class="<?php echo join(' ', $wrapper_classes) ?>">
+				    <?php if ($data->have_posts()) :
+					    while ($data->have_posts()): $data->the_post(); ?>
+						    <?php ere_get_template('content-property.php', array(
+							    'property_item_class' => $property_item_class,
+							    'custom_property_image_size' => $custom_property_image_size
+						    )); ?>
+
+
+					    <?php endwhile;
+				    else: ?>
+                        <div class="item-not-found"><?php esc_html_e('No item found', 'essential-real-estate'); ?></div>
+				    <?php endif; ?>
+                    <div class="clearfix"></div>
+				    <?php
+				    $max_num_pages = $data->max_num_pages;
+				    ere_get_template('global/pagination.php', array('max_num_pages' => $max_num_pages));
+				    wp_reset_postdata(); ?>
+                </div>
+            </div>
+		    <?php do_action('ere_archive_property_after_main_content'); ?>
+        </div>
+
+    </div>
+</div>
+<div class="sec-articles">
+    <div class="s-container">
+
+        <h2 class="s-title">ARTICLES</h2>
+
+        <div class="s-grid -m2 -d3">
+            <?php
+            $args = array(
+                //'category_name' => 'news',
+                'posts_per_page' => 6
+            );
+            $the_query = new WP_Query( $args );
+            ?>
+
+            <?php while ( $the_query->have_posts() ) : $the_query->the_post(); ?>
+
+                <?php get_template_part( 'template-parts/content', 'card' ); ?>
+
+                <?php // get_template_part( 'template-parts/content', 'list' ); ?>
+
+            <?php endwhile; wp_reset_postdata(); ?>
+
+        </div>
+
+    </div>
+</div>
+
+
+<?php get_footer(); ?>
