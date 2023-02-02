@@ -8,6 +8,8 @@ bower_components
 .bower-registry
 .bower-tmp
 
+package-lock.json
+
 ### Composer ###
 composer.phar
 /vendor/
